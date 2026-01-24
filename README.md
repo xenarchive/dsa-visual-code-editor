@@ -1,15 +1,17 @@
-# React + Vite
+# Interactive DSA Code Editor
 
-An in-browser code editor that allows you to write and execute your code in the browser.
+An interactive platform for practicing Data Structures and Algorithms with:
+- Real-time code execution
+- Error detection
+- Planned visualization of data structures
+- Progressive hint-based guidance
 
-## Run Locally
+## Tech Stack
+- React
+- Monaco Editor
+- Node.js (planned)
+- AI/ML (planned)
 
-```bash
-# install dependencies
-
-npm install
-
-# start the dev server
-
-npm run dev
-```
+## Status
+UI completed. Working on question analysis and hint engine.
+[
