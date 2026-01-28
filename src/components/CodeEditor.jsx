@@ -7,6 +7,7 @@ import Output from "./Output";
 import { executeCode } from "../api";
 import { useToast } from "@chakra-ui/react";
 import { analyzeQuestion } from "./Analyzer";
+import TutorPanel from "./TutorPanel";
 
 const CodeEditor = ({ currentQuestion }) => {
   const editorRef = useRef();
@@ -17,6 +18,8 @@ const CodeEditor = ({ currentQuestion }) => {
   const [output, setOutput] = useState(null);
   const [isError, setIsError] = useState(false);
   const [analyzedQuestion, setAnalyzedQuestion] = useState(null);
+  const [observation, setObservation] = useState("");
+  const [hint, setHint] = useState("");
   const toast = useToast();
 
   useEffect(() => {
@@ -147,6 +150,18 @@ const CodeEditor = ({ currentQuestion }) => {
             >
               ▶ Run
             </Button>
+            <Button
+              variant="solid"
+              colorScheme="green"
+              size="sm"
+              _hover={{ bg: "green.600" }}
+              onClick={() => {
+                setObservation("I see you're using nested loops.");
+                setHint("This works, but can we reduce the time complexity?");
+              }}
+            >
+              Test Tutor
+            </Button>
           </HStack>
         </VStack>
         <Box borderRadius="lg" overflow="hidden">
@@ -162,13 +177,36 @@ const CodeEditor = ({ currentQuestion }) => {
             defaultValue={CODE_SNIPPETS[language]}
             onMount={onMount}
             value={value}
-            onChange={(value) => setValue(value)}
+            onChange={(value) => {
+              setValue(value);
+
+              // Tutor logic - provide feedback based on code patterns
+              if (value.includes("for")) {
+                setObservation("I notice you're using loops.");
+                setHint("Loops are fine, but sometimes there's a faster way.");
+              } else if (value.includes("while")) {
+                setObservation("I see a while loop in your code.");
+                setHint("Make sure your loop has a proper termination condition.");
+              } else if (value.includes("def ") || value.includes("function")) {
+                setObservation("Great! You're defining a function.");
+                setHint("Consider what parameters your function should accept.");
+              } else if (value.length === 0) {
+                setObservation("");
+                setHint("");
+              } else if (value.length > 0 && !value.includes("for") && !value.includes("while")) {
+                setObservation("You're writing code. Great start!");
+                setHint("Think about the approach: what data structures might help?");
+              }
+            }}
           />
         </Box>
       </VStack>
 
       {/* Right Sidebar - Output/Visualization */}
       <Output output={output} isError={isError} question={analyzedQuestion} />
+
+      {/* Tutor Panel */}
+      <TutorPanel observation={observation} hint={hint} />
     </HStack>
   );
 };
