@@ -1,0 +1,24 @@
+{
+  "id": "reverse-linked-list",
+  "title": "Reverse a Linked List",
+  "category": "linked-list",
+  "difficulty": "easy",
+  "problem_summary": "Reverse the direction of a linked list.",
+  "brute_force": {
+    "idea": "Use recursion to reverse each node",
+    "time": "O(n)",
+    "space": "O(n) due to recursion stack"
+  },
+  "optimized": {
+    "idea": "Iterate through the list with three pointers: prev, curr, next",
+    "time": "O(n)",
+    "space": "O(1)"
+  },
+  "hints": [
+    "What direction are the pointers currently pointing?",
+    "How can you reverse a pointer's direction?",
+    "You need to keep track of the previous node. Why?",
+    "Once you reverse a pointer, where is the next node?",
+    "Three pointers strategy: prev, curr, next will help you manage the reversal."
+  ]
+}

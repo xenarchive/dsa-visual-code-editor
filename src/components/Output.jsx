@@ -1,6 +1,7 @@
 import { Box, Text, VStack, Center, HStack } from "@chakra-ui/react";
+import HintPanel from "./HintPanel";
 
-const Output = ({ output, isError }) => {
+const Output = ({ output, isError, question }) => {
   return (
     <VStack
       w="25%"
@@ -10,6 +11,8 @@ const Output = ({ output, isError }) => {
       p={4}
       spacing={4}
       align="stretch"
+      overflowY="auto"
+      maxH="calc(100vh - 80px)"
     >
       {/* Visualization Section */}
       <VStack align="stretch" spacing={3} flex={1}>
@@ -57,6 +60,13 @@ const Output = ({ output, isError }) => {
             : <Text color="gray.500">Click "Run" to see the output here</Text>}
         </Box>
       </VStack>
+
+      {/* Hints Section */}
+      {question && (
+        <VStack align="stretch" spacing={3} borderTop="1px solid" borderColor="#2e2a3e" pt={4}>
+          <HintPanel question={question} />
+        </VStack>
+      )}
     </VStack>
   );
 };

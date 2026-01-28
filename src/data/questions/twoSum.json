@@ -1,0 +1,23 @@
+{
+  "id": "two-sum",
+  "title": "Two Sum",
+  "category": "array",
+  "difficulty": "easy",
+  "problem_summary": "Find two indices such that their values add up to the target.",
+  "brute_force": {
+    "idea": "Try all possible pairs using nested loops",
+    "time": "O(n^2)",
+    "space": "O(1)"
+  },
+  "optimized": {
+    "idea": "Use a hashmap to store visited numbers",
+    "time": "O(n)",
+    "space": "O(n)"
+  },
+  "hints": [
+    "What happens if you check every possible pair of numbers?",
+    "Is there a way to remember numbers you've already seen?",
+    "How fast can you check if a number exists using a hashmap?",
+    "Using a hashmap can reduce repeated comparisons."
+  ]
+}

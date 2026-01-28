@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Box, HStack, VStack, Button, Textarea, Text } from "@chakra-ui/react";
 import { Editor } from "@monaco-editor/react";
 import LanguageSelector from "./LanguageSelector";
@@ -6,8 +6,9 @@ import { CODE_SNIPPETS } from "../constants";
 import Output from "./Output";
 import { executeCode } from "../api";
 import { useToast } from "@chakra-ui/react";
+import { analyzeQuestion } from "./Analyzer";
 
-const CodeEditor = () => {
+const CodeEditor = ({ currentQuestion }) => {
   const editorRef = useRef();
   const [value, setValue] = useState("");
   const [language, setLanguage] = useState("python");
@@ -15,7 +16,14 @@ const CodeEditor = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [output, setOutput] = useState(null);
   const [isError, setIsError] = useState(false);
+  const [analyzedQuestion, setAnalyzedQuestion] = useState(null);
   const toast = useToast();
+
+  useEffect(() => {
+    if (currentQuestion) {
+      setQuestion(currentQuestion);
+    }
+  }, [currentQuestion]);
 
   const onMount = (editor) => {
     editorRef.current = editor;
@@ -94,6 +102,14 @@ const CodeEditor = () => {
           _hover={{ bg: "blue.600" }}
           fontSize="14px"
           h="40px"
+          onClick={() => {
+            console.log("Analyze button clicked, question:", question);
+            const result = analyzeQuestion(question);
+            console.log("Result from analyzeQuestion:", result);
+            if (result) {
+              setAnalyzedQuestion(result);
+            }
+          }}
         >
           Analyze Question
         </Button>
@@ -152,7 +168,7 @@ const CodeEditor = () => {
       </VStack>
 
       {/* Right Sidebar - Output/Visualization */}
-      <Output output={output} isError={isError} />
+      <Output output={output} isError={isError} question={analyzedQuestion} />
     </HStack>
   );
 };

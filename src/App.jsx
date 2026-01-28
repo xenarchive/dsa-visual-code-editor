@@ -1,4 +1,4 @@
-import { Box, HStack, Text, Image } from "@chakra-ui/react";
+import { Box, HStack, Text } from "@chakra-ui/react";
 import CodeEditor from "./components/CodeEditor";
 
 function App() {
