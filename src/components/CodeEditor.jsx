@@ -7,19 +7,17 @@ import Output from "./Output";
 import { executeCode } from "../api";
 import { useToast } from "@chakra-ui/react";
 import { analyzeQuestion } from "./Analyzer";
-import TutorPanel from "./TutorPanel";
-
-const CodeEditor = ({ currentQuestion }) => {
+const CodeEditor = ({ currentQuestion, pushTutorMessage }) => {
   const editorRef = useRef();
   const [value, setValue] = useState("");
   const [language, setLanguage] = useState("python");
   const [question, setQuestion] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [output, setOutput] = useState(null);
+  const [stdin, setStdin] = useState("");
   const [isError, setIsError] = useState(false);
   const [analyzedQuestion, setAnalyzedQuestion] = useState(null);
-  const [observation, setObservation] = useState("");
-  const [hint, setHint] = useState("");
+  // Tutor messages are pushed via `pushTutorMessage` from parent App
   const toast = useToast();
 
   useEffect(() => {
@@ -47,7 +45,7 @@ const CodeEditor = ({ currentQuestion }) => {
     if (!sourceCode) return;
     try {
       setIsLoading(true);
-      const { run: result } = await executeCode(language, sourceCode);
+      const { run: result } = await executeCode(language, sourceCode, stdin);
       setOutput(result.output.split("\n"));
       result.stderr ? setIsError(true) : setIsError(false);
     } catch (error) {
@@ -156,8 +154,9 @@ const CodeEditor = ({ currentQuestion }) => {
               size="sm"
               _hover={{ bg: "green.600" }}
               onClick={() => {
-                setObservation("I see you're using nested loops.");
-                setHint("This works, but can we reduce the time complexity?");
+                if (pushTutorMessage) {
+                  pushTutorMessage("I see you're using nested loops. This works, but can we reduce the time complexity?");
+                }
               }}
             >
               Test Tutor
@@ -181,21 +180,18 @@ const CodeEditor = ({ currentQuestion }) => {
               setValue(value);
 
               // Tutor logic - provide feedback based on code patterns
+              if (!pushTutorMessage) return;
+
               if (value.includes("for")) {
-                setObservation("I notice you're using loops.");
-                setHint("Loops are fine, but sometimes there's a faster way.");
+                pushTutorMessage("I notice you're using loops. Loops are fine, but sometimes there's a faster way.");
               } else if (value.includes("while")) {
-                setObservation("I see a while loop in your code.");
-                setHint("Make sure your loop has a proper termination condition.");
+                pushTutorMessage("I see a while loop in your code. Make sure your loop has a proper termination condition.");
               } else if (value.includes("def ") || value.includes("function")) {
-                setObservation("Great! You're defining a function.");
-                setHint("Consider what parameters your function should accept.");
+                pushTutorMessage("Great! You're defining a function. Consider what parameters your function should accept.");
               } else if (value.length === 0) {
-                setObservation("");
-                setHint("");
+                // don't push empty messages
               } else if (value.length > 0 && !value.includes("for") && !value.includes("while")) {
-                setObservation("You're writing code. Great start!");
-                setHint("Think about the approach: what data structures might help?");
+                pushTutorMessage("You're writing code. Great start! Think about the approach: what data structures might help?");
               }
             }}
           />
@@ -203,10 +199,9 @@ const CodeEditor = ({ currentQuestion }) => {
       </VStack>
 
       {/* Right Sidebar - Output/Visualization */}
-      <Output output={output} isError={isError} question={analyzedQuestion} />
+      <Output output={output} isError={isError} question={analyzedQuestion} stdin={stdin} setStdin={setStdin} />
 
-      {/* Tutor Panel */}
-      <TutorPanel observation={observation} hint={hint} />
+      {/* Tutor UI handled at App level via TutorChatbox */}
     </HStack>
   );
 };

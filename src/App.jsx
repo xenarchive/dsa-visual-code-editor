@@ -1,7 +1,29 @@
-import { Box, HStack, Text } from "@chakra-ui/react";
+import React, { useState } from "react";
+import { Box, HStack, Text, Button } from "@chakra-ui/react";
 import CodeEditor from "./components/CodeEditor";
+import TutorChatbox from "./components/TutorChatbox";
 
 function App() {
+  const [isTutorOpen, setIsTutorOpen] = useState(false);
+  const [hasNotification, setHasNotification] = useState(false);
+  const [tutorMessages, setTutorMessages] = useState([
+    {
+      from: "tutor",
+      text: "Hi! I’ll guide you as you work through this problem.",
+    },
+  ]);
+
+  const pushTutorMessage = (text) => {
+    if (!text) return;
+    const last = tutorMessages[tutorMessages.length - 1];
+    if (last && last.text === text) return; // avoid duplicates
+
+    setTutorMessages((prev) => [...prev, { from: "tutor", text }]);
+
+    if (!isTutorOpen) {
+      setHasNotification(true);
+    }
+  };
   return (
     <Box minH="100vh" bg="#0f0a19" color="gray.500" display="flex" flexDirection="column">
       {/* Header */}
@@ -30,8 +52,50 @@ function App() {
 
       {/* Main Content */}
       <Box flex={1} overflow="hidden">
-        <CodeEditor />
+        <CodeEditor pushTutorMessage={pushTutorMessage} />
       </Box>
+
+      {/* Floating tutor icon */}
+      <Button
+        onClick={() => {
+          setIsTutorOpen(true);
+          setHasNotification(false);
+        }}
+        position="fixed"
+        bottom="20px"
+        right="20px"
+        borderRadius="50%"
+        width="56px"
+        height="56px"
+        bg="#4f46e5"
+        color="#fff"
+        fontSize="24px"
+        zIndex={1001}
+      >
+        💬
+        {hasNotification && (
+          <span
+            style={{
+              position: "absolute",
+              top: "-4px",
+              right: "-4px",
+              width: "18px",
+              height: "18px",
+              background: "red",
+              color: "#fff",
+              borderRadius: "50%",
+              fontSize: "12px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            !
+          </span>
+        )}
+      </Button>
+
+      <TutorChatbox isOpen={isTutorOpen} messages={tutorMessages} onClose={() => setIsTutorOpen(false)} />
     </Box>
   );
 }
