@@ -7,7 +7,10 @@ import Output from "./Output";
 import { executeCode } from "../api";
 import { useToast } from "@chakra-ui/react";
 import { analyzeQuestion } from "./Analyzer";
-const CodeEditor = ({ currentQuestion, pushTutorMessage }) => {
+import { detectPatterns, generateTwoSumFeedback } from "../utils/patternDetector";
+import twoSumData from "../data/questions/twoSum.json";
+
+const CodeEditor = ({ currentProblem, pushTutorMessage }) => {
   const editorRef = useRef();
   const [value, setValue] = useState("");
   const [language, setLanguage] = useState("python");
@@ -19,12 +22,6 @@ const CodeEditor = ({ currentQuestion, pushTutorMessage }) => {
   const [analyzedQuestion, setAnalyzedQuestion] = useState(null);
   // Tutor messages are pushed via `pushTutorMessage` from parent App
   const toast = useToast();
-
-  useEffect(() => {
-    if (currentQuestion) {
-      setQuestion(currentQuestion);
-    }
-  }, [currentQuestion]);
 
   const onMount = (editor) => {
     editorRef.current = editor;
@@ -179,19 +176,14 @@ const CodeEditor = ({ currentQuestion, pushTutorMessage }) => {
             onChange={(value) => {
               setValue(value);
 
-              // Tutor logic - provide feedback based on code patterns
-              if (!pushTutorMessage) return;
+              // Pattern-based tutor logic for Two Sum
+              if (!pushTutorMessage || currentProblem !== "two-sum") return;
 
-              if (value.includes("for")) {
-                pushTutorMessage("I notice you're using loops. Loops are fine, but sometimes there's a faster way.");
-              } else if (value.includes("while")) {
-                pushTutorMessage("I see a while loop in your code. Make sure your loop has a proper termination condition.");
-              } else if (value.includes("def ") || value.includes("function")) {
-                pushTutorMessage("Great! You're defining a function. Consider what parameters your function should accept.");
-              } else if (value.length === 0) {
-                // don't push empty messages
-              } else if (value.length > 0 && !value.includes("for") && !value.includes("while")) {
-                pushTutorMessage("You're writing code. Great start! Think about the approach: what data structures might help?");
+              const patterns = detectPatterns(value);
+              const feedback = generateTwoSumFeedback(patterns);
+
+              if (feedback) {
+                pushTutorMessage(feedback);
               }
             }}
           />

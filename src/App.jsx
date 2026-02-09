@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Box, HStack, Text, Button } from "@chakra-ui/react";
 import CodeEditor from "./components/CodeEditor";
 import TutorChatbox from "./components/TutorChatbox";
@@ -6,6 +6,8 @@ import TutorChatbox from "./components/TutorChatbox";
 function App() {
   const [isTutorOpen, setIsTutorOpen] = useState(false);
   const [hasNotification, setHasNotification] = useState(false);
+  const [currentProblem, setCurrentProblem] = useState("two-sum");
+  const lastTutorRef = useRef(null);
   const [tutorMessages, setTutorMessages] = useState([
     {
       from: "tutor",
@@ -15,9 +17,9 @@ function App() {
 
   const pushTutorMessage = (text) => {
     if (!text) return;
-    const last = tutorMessages[tutorMessages.length - 1];
-    if (last && last.text === text) return; // avoid duplicates
+    if (lastTutorRef.current === text) return; // prevent spam
 
+    lastTutorRef.current = text;
     setTutorMessages((prev) => [...prev, { from: "tutor", text }]);
 
     if (!isTutorOpen) {
@@ -52,7 +54,7 @@ function App() {
 
       {/* Main Content */}
       <Box flex={1} overflow="hidden">
-        <CodeEditor pushTutorMessage={pushTutorMessage} />
+        <CodeEditor currentProblem={currentProblem} pushTutorMessage={pushTutorMessage} />
       </Box>
 
       {/* Floating tutor icon */}
