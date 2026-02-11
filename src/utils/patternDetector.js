@@ -4,27 +4,80 @@
  */
 
 export const detectPatterns = (code) => {
-  return {
+  const patterns = {
     hasLoop: code.includes("for") || code.includes("while"),
     hasNestedLoop: !!(code.match(/for[\s\S]*for/) || code.match(/while[\s\S]*while/)),
     hasMap:
       code.includes("unordered_map") ||
+      code.includes("std::unordered_map") ||
       code.includes("map<") ||
       code.includes("HashMap") ||
-      code.includes("{") ||
-      code.includes("[") ||
+      code.includes("new Map") ||
+      code.includes("Map(") ||
       code.includes("dict") ||
-      code.includes("set"),
+      code.includes("Dict"),
     hasHashSet:
       code.includes("unordered_set") ||
+      code.includes("std::unordered_set") ||
       code.includes("set<") ||
       code.includes("HashSet") ||
-      code.includes("set("),
+      code.includes("set(") ||
+      code.includes("new Set") ||
+      code.includes("Set(") ||
+      code.includes(".has(") ||
+      code.includes(".add(") ||
+      code.includes(".find(") ||
+      code.includes("->find(") ||
+      code.includes(".insert(") ||
+      code.includes("->insert(") ||
+      code.includes(".count(") ||
+      code.includes("->count(") ||
+      code.includes(".emplace(") ||
+      code.includes("->emplace("),
     hasFunction:
       code.includes("def ") ||
       code.includes("function") ||
       code.includes("=>"),
     isEmpty: code.trim().length === 0,
+  };
+
+  // Explicit keyword checks for higher-confidence detection
+  const explicitHashKeywords = [
+    "unordered_map",
+    "unordered_set",
+    "HashMap",
+    "HashSet",
+    "new Map",
+    "Map(",
+    "new Set",
+    "Set(",
+    ".add(",
+    ".set(",
+    ".has(",
+    "dict(",
+    "dict ",
+  ];
+
+  const hasExplicitHash = explicitHashKeywords.some((k) => code.includes(k));
+
+  const detectedStrategy = (patterns.hasMap || patterns.hasHashSet)
+    ? "hashmap"
+    : patterns.hasNestedLoop
+    ? "bruteforce"
+    : patterns.hasLoop
+    ? "linear"
+    : "unknown";
+
+  const shouldVisualize = detectedStrategy === "hashmap";
+
+  const confidence =
+    detectedStrategy === "hashmap" ? (hasExplicitHash ? "high" : "low") : detectedStrategy === "bruteforce" ? "high" : "low";
+
+  return {
+    patterns,
+    detectedStrategy,
+    shouldVisualize,
+    confidence,
   };
 };
 
@@ -32,37 +85,39 @@ export const detectPatterns = (code) => {
  * Generate feedback for Two Sum problem based on detected patterns
  * Can optionally use hints from problemData
  */
-export const generateTwoSumFeedback = (patterns, problemData = null) => {
-  if (patterns.isEmpty) {
-    return null;
+export const generateTwoSumFeedback = (detection, hintLevel = 0, problemData = null) => {
+  const { patterns, detectedStrategy, confidence: detectedConfidence } = detection;
+  if (!patterns || patterns.isEmpty) return null;
+
+  // Strategy-specific messages that escalate with hint level and respect confidence
+  if (detectedStrategy === "bruteforce") {
+    if (hintLevel === 0) {
+      return "This approach checks all pairs. What does that mean for performance?";
+    } else if (hintLevel === 1) {
+      return "Can you avoid rechecking numbers you've already seen?";
+    } else {
+      return "Try storing visited numbers in a hashmap while iterating.";
+    }
   }
 
-  // Nested loop detected - brute force approach
-  if (patterns.hasNestedLoop) {
-    // Could use: problemData?.hints[0] if available
-    return "You're checking all pairs. This works, but the time complexity is O(n²). Can you remember previous values to avoid repeated checks?";
+  if (detectedStrategy === "hashmap") {
+    // If we have high confidence (explicit keywords), praise and explain.
+    if (detectedConfidence === "high") {
+      return "Nice — storing previously seen values lets you do O(1) lookups and reduces overall time complexity to O(n).";
+    }
+    // Low confidence: be suggestive rather than praising.
+    return "It looks like you might be using a hash-based structure. If not, consider storing seen values to avoid repeated checks.";
   }
 
-  // HashMap/dict detected - optimized approach
-  if (patterns.hasMap && !patterns.hasNestedLoop && patterns.hasLoop) {
-    // Could use: problemData?.hints[2] if available
-    return "Nice! Using a hash data structure helps reduce the time complexity to O(n). This is the optimized approach!";
+  if (detectedStrategy === "linear") {
+    if (hintLevel === 0) {
+      return "You're iterating through the array. Think about whether you can remember previous values to speed up lookups.";
+    }
+    return "Consider storing seen numbers in a hash to look up complements in O(1).";
   }
 
-  // Only has a loop (single)
-  if (patterns.hasLoop && !patterns.hasNestedLoop && !patterns.hasMap) {
-    // Could use: problemData?.hints[1] if available
-    return "You're iterating through the array. Can you store previous values in a hash data structure to avoid repeated checks?";
-  }
-
-  // Has function but no implementation yet
-  if (patterns.hasFunction && !patterns.hasLoop) {
-    return "Great! You're defining a function. Now think about the approach: should you check all pairs or use a smarter strategy?";
-  }
-
-  // Generic code started
-  if (patterns.hasFunction) {
-    return "Good start! Now implement your algorithm. Think about: do you need nested loops or can you use a data structure to speed things up?";
+  if (detectedStrategy === "unknown") {
+    return "I'm not fully sure about your approach yet. Can you explain what you're trying?";
   }
 
   return null;

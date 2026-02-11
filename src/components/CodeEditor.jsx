@@ -20,8 +20,44 @@ const CodeEditor = ({ currentProblem, pushTutorMessage }) => {
   const [stdin, setStdin] = useState("");
   const [isError, setIsError] = useState(false);
   const [analyzedQuestion, setAnalyzedQuestion] = useState(null);
+  const [hintLevel, setHintLevel] = useState(0);
+  const [detectedStrategy, setDetectedStrategy] = useState("unknown");
+  const lastChangeRef = useRef(Date.now());
   // Tutor messages are pushed via `pushTutorMessage` from parent App
   const toast = useToast();
+
+  useEffect(() => {
+    setHintLevel(0);
+  }, [detectedStrategy]);
+
+  // Periodically check whether the user appears stuck and escalate hint level
+  useEffect(() => {
+    if (!pushTutorMessage || currentProblem !== "two-sum") return;
+
+    const id = setInterval(() => {
+      const codeText = value || "";
+      const detection = detectPatterns(codeText);
+      const patternChangedNow = detection.detectedStrategy !== detectedStrategy;
+
+      const isStuck =
+        codeText.length > 0 &&
+        Date.now() - lastChangeRef.current > 20_000 &&
+        !patternChangedNow;
+
+      if (isStuck) {
+        setHintLevel((prev) => {
+          const next = Math.min(prev + 1, 2);
+          if (next !== prev) {
+            const feedback = generateTwoSumFeedback(detection, next);
+            if (feedback) pushTutorMessage(feedback);
+          }
+          return next;
+        });
+      }
+    }, 3000);
+
+    return () => clearInterval(id);
+  }, [value, detectedStrategy, pushTutorMessage, currentProblem]);
 
   const onMount = (editor) => {
     editorRef.current = editor;
@@ -176,14 +212,28 @@ const CodeEditor = ({ currentProblem, pushTutorMessage }) => {
             onChange={(value) => {
               setValue(value);
 
+              // update last change timestamp
+              lastChangeRef.current = Date.now();
+
               // Pattern-based tutor logic for Two Sum
               if (!pushTutorMessage || currentProblem !== "two-sum") return;
 
-              const patterns = detectPatterns(value);
-              const feedback = generateTwoSumFeedback(patterns);
+              const detection = detectPatterns(value);
+              const patternChanged = detection.detectedStrategy !== detectedStrategy;
 
-              if (feedback) {
-                pushTutorMessage(feedback);
+              // If strategy changed, reset patience and give the conceptual hint
+              if (patternChanged) {
+                setDetectedStrategy(detection.detectedStrategy);
+                setHintLevel(0);
+                const feedback = generateTwoSumFeedback(detection, 0);
+                if (feedback) pushTutorMessage(feedback);
+                // Offer visualization signal when appropriate (no visualization implemented yet)
+                if (detection.shouldVisualize) {
+                  const vizMsg = "Want to see how the hashmap fills up step by step?";
+                  if (feedback == null || !/visual/i.test(feedback)) {
+                    pushTutorMessage(vizMsg);
+                  }
+                }
               }
             }}
           />
