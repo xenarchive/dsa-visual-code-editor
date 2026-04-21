@@ -8,18 +8,19 @@ function App() {
   const [hasNotification, setHasNotification] = useState(false);
   const [currentProblem, setCurrentProblem] = useState("two-sum");
   const lastTutorRef = useRef(null);
+  const sentMessagesRef = useRef(new Set());
   const [tutorMessages, setTutorMessages] = useState([
     {
       from: "tutor",
-      text: "Hi! I’ll guide you as you work through this problem.",
+      text: "Hi! I'll guide you as you work through this problem.",
     },
   ]);
 
   const pushTutorMessage = (text) => {
     if (!text) return;
-    if (lastTutorRef.current === text) return; // prevent spam
+    if (sentMessagesRef.current.has(text)) return; // prevent duplicate messages
 
-    lastTutorRef.current = text;
+    sentMessagesRef.current.add(text);
     setTutorMessages((prev) => [...prev, { from: "tutor", text }]);
 
     if (!isTutorOpen) {
